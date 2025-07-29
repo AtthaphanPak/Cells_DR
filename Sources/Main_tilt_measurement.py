@@ -2,37 +2,50 @@ from IL_sensors_cmd import Read_all_sensor, set_all_zero
 from measurement import fit_plane, calculate_relative_tilt, calculate_roll_pitch_from_ref, describe_pitch_direction, describe_roll_direction, evaluate_offset_and_result
 import configparser
 import os
-from PyQt6.QtWidgets import QMessageBox
+import tkinter as tk
+from tkinter import messagebox
 import numpy as np
 
 class Displacement_measurement():
     def __init__(self):
+        root = tk.Tk()
+        root.withdraw()
         self.config = configparser.ConfigParser()
         pcname = os.environ['COMPUTERNAME']     
         print(pcname)
         try:
-            self.config.read("C:\Projects\Cells_DR\Source\Properties\Config.ini")
+            self.config.read("C:\Projects\Cells_DR\Properties\Config.ini")
             self.IL_IP = self.config["DEFAULT"].get("IL_IP", "")
-            self.IL_PORT = self.config["DEFAULT"].get("IL_PORT", "")
+            self.IL_PORT = int(self.config["DEFAULT"].get("IL_PORT", ""))
             self.LogPath = self.config["DEFAULT"].get("LogPath", "")
-            self.mode = self.config["DEFAULT"].get("mode", "")
+            self.mode = self.config["DEFAULT"].get("MODE", "")
         except Exception as e:
-            QMessageBox.critical(None, "Close Program", f"{e}\nPlease check config.ini")
-            quit()
-  
-    def main(self):
-        IL_status = set_all_zero(self.IL_IP, self.IL_PORT)
-        if IL_status is False:
-            QMessageBox.critical(None, "IL Sensor ERROR", "Can not set zreo\nPlease check IL-Sensor power")
-            quit()
-        
-        IL_status = Read_all_sensor(self.IL_IP, self.IL_PORT)
-        if IL_status is False:
-            QMessageBox.critical(None, "IL Sensor ERROR", "Can not read sensor\nPlease check IL-Sensor power")
+            print(f"{e}\nPlease check config.ini")
+            messagebox.showerror("Close Program", f"{e}\nPlease check config.ini")
             quit()
 
-        measured_values = map(float, IL_status.split(",").pop(0))
-        QMessageBox.information(None, "Measured values", f"Displacement measured\nCover 1\t{measured_values}\nCover 2\t{measured_values}\nCover 3\t{measured_values}\nBench 1\t{measured_values}\nBench 2\t{measured_values}\nBench 3\t{measured_values}\nBench 4\t{measured_values}")
+    def main(self):
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showinfo("Insert Top Cover", "Please Insert Top cover to reset all sensor to zero")
+        IL_status = set_all_zero(self.IL_IP, self.IL_PORT)
+        if IL_status is False:
+            print("Can not set zreo\nPlease check IL-Sensor power")
+            messagebox.showerror("IL Sensor ERROR", "Can not set zreo\nPlease check IL-Sensor power")
+            quit()
+        
+        messagebox.showinfo("Remove Top cover", "Please remove top cover before read measured values")
+        IL_status = Read_all_sensor(self.IL_IP, self.IL_PORT)
+        if IL_status is False:
+            print("Can not read sensor\nPlease check IL-Sensor power")
+            messagebox.showerror("IL Sensor ERROR", "Can not read sensor\nPlease check IL-Sensor power")
+            quit()
+        array_values = IL_status.split(",")
+        array_values.pop(0)
+        print(array_values)
+        measured_values = np.array(array_values).astype(int) / 1000
+        print(f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
+        messagebox.showinfo("Measured values", f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
 
         # Top cover
         ref_points = np.array([
