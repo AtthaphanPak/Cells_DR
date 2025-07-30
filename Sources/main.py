@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 from PyQt6.QtCore import QTimer
+from PyQt6.QtGui import QPixmap
 from PyQt6 import uic
 from datetime import datetime
 import numpy as np
@@ -44,6 +45,13 @@ class MainWindow(QMainWindow):
         self.enLineEdit.setFocus()
         self.enLineEdit.returnPressed.connect(self.LoginButton.click)
 
+        pixmap_insert = QPixmap(r"C:\Projects\Cells_DR\Properties\insert_img.jpg")
+        self.insert_img.setPixmap(pixmap_insert)
+        # self.insert_img.setScaledContents(True)
+        pixmap_remove = QPixmap(r"C:\Projects\Cells_DR\Properties\remove_img.jpg")
+        self.remove_img.setPixmap(pixmap_remove)
+        # self.remove_img.setScaledContents(True)
+
         # action Button 
         self.LoginButton.clicked.connect(self.login)
         self.ModeButton.clicked.connect(self.select_mode)
@@ -65,6 +73,8 @@ class MainWindow(QMainWindow):
         self.sn_cover = ""
         self.sn_bench = ""
         self.enLineEdit.setText("")
+        self.SNCoverValue.setText("")
+        self.SNBenchValue.setText("")
         self.lineEdit_Operator.setText("")
         self.lineEdit_Operation.setText("")
         self.lineEdit_Station.setText("")
@@ -84,6 +94,7 @@ class MainWindow(QMainWindow):
         self.Result_Bench_avg.setText("")
         self.Result_offset.setText("")
         self.Result_Final.setText("")
+        self.Result_Final.setStyleSheet("")
     
     def select_mode(self):
         password, ok = QInputDialog.getText(self, "Admin login", "Enter admin password:", QLineEdit.EchoMode.Password)
@@ -99,10 +110,7 @@ class MainWindow(QMainWindow):
         self.en = self.enLineEdit.text()
         if len(self.en) == 6:
             self.label_Error_login.setText("")
-            self.MainstackedWidget.setCurrentIndex(1)
-            self.SNCoverValue.setFocus()
-            self.SNCoverValue.returnPressed.connect(lambda: self.SNBenchValue.setFocus())
-            self.SNBenchValue.returnPressed.connect(self.StartButton.click)
+            QTimer.singleShot(100, self.serial_page)
         else:
             self.label_Error_login.setStyleSheet("color: red;")
             self.label_Error_login.setText("Invalid Employee number")
@@ -111,7 +119,12 @@ class MainWindow(QMainWindow):
     def logout(self):
         self.MainstackedWidget.setCurrentIndex(0)
         self.clear_log()
-        # QTimer.singleShot(100, self.login)
+            
+    def serial_page(self):
+        self.MainstackedWidget.setCurrentIndex(1)
+        self.SNCoverValue.setFocus()
+        self.SNCoverValue.returnPressed.connect(lambda: self.SNBenchValue.setFocus())
+        self.SNBenchValue.returnPressed.connect(self.StartButton.click)
 
     def check_serials(self):
         print("check_serials")
@@ -161,16 +174,22 @@ class MainWindow(QMainWindow):
 
         array_values = IL_status.split(",")
         array_values.pop(0)
-        print(array_values)
+        # print(array_values)
         measured_values = np.array(array_values).astype(int) / 1000
-
-        self.Cover_1_Value.setText(measured_values[0])
-        self.Cover_2_Value.setText(measured_values[1])
-        self.Cover_3_Value.setText(measured_values[2])
-        self.Bench_1_Value.setText(measured_values[3])
-        self.Bench_2_Value.setText(measured_values[4])
-        self.Bench_3_Value.setText(measured_values[5])
-        self.Bench_4_Value.setText(measured_values[6])
+        if np.any((measured_values > 999) | (measured_values < -999)):
+            QMessageBox.warning(self, "Sensor out limit", "Please check Sensor or Unit that place in fixture")
+            self.MainstackedWidget.setCurrentIndex(1)
+            self.SNCoverValue.setFocus()
+            return
+        
+        measured_values_str = measured_values.astype(str)
+        self.Cover_1_Value.setText(measured_values_str[0])
+        self.Cover_2_Value.setText(measured_values_str[1])
+        self.Cover_3_Value.setText(measured_values_str[2])
+        self.Bench_1_Value.setText(measured_values_str[3])
+        self.Bench_2_Value.setText(measured_values_str[4])
+        self.Bench_3_Value.setText(measured_values_str[5])
+        self.Bench_4_Value.setText(measured_values_str[6])
         # print(f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
         
         # Top cover
@@ -203,44 +222,51 @@ class MainWindow(QMainWindow):
 
         # Offset and PASS/FAIL check
         offset, cover_avg_z, bench_avg_z, is_pass = evaluate_offset_and_result(ref_points, test_points)
+        result = "PASS" if is_pass else "FAIL"
         self.Result_cover_avg.setText(f"{cover_avg_z:5f}")
         self.Result_Bench_avg.setText(f"{bench_avg_z:.5f}")
         self.Result_offset.setText(f"{offset:.5f}")
-        self.Result_Final.setText("Result: PASS" if is_pass else "Result: FAIL")
+        if result == "PASS":
+            self.Result_Final.setStyleSheet("background-color: green; color: white; font-weight: bold;")
+            self.Result_Final.setText(result)
+        else:
+            self.Result_Final.setStyleSheet("background-color: red; color: white; font-weight: bold;")
+            self.Result_Final.setText(result)
+        
         
         self.df = {
             "EN": self.en,
             "SN Cover": self.sn_cover,
             "SN Bench": self.sn_bench,
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Cover 1": measured_values[0],
-            "Cover 2": measured_values[1],
-            "Cover 3": measured_values[2],
-            "Bench 1": measured_values[3],
-            "Bench 2": measured_values[4],
-            "Bench 3": measured_values[5],
-            "Bench 4": measured_values[6],
-            "Reference Normal": n_ref,
-            "Test Normal": n_test,
+            "Cover 1": measured_values_str[0],
+            "Cover 2": measured_values_str[1],
+            "Cover 3": measured_values_str[2],
+            "Bench 1": measured_values_str[3],
+            "Bench 2": measured_values_str[4],
+            "Bench 3": measured_values_str[5],
+            "Bench 4": measured_values_str[6],
+            "Reference Normal": str(n_ref),
+            "Test Normal": str(n_test),
             "Tilt angle between planes": f"{tilt_angle:.5f}",
-            "Tilt Pitch direction":Result_Pitch,
-            "Tilt Roll direction":Result_Roll,
+            "Tilt Pitch direction":str(Result_Pitch),
+            "Tilt Roll direction":str(Result_Roll),
             "Cover avg Z": f"{cover_avg_z:5f}",
             "Bench avg Z": f"{bench_avg_z:.5f}",
             "Offset": f"{offset:.5f}",
-            "Result": "Result: PASS" if is_pass else "Result: FAIL"
+            "Result": "PASS" if is_pass else "FAIL"
         }
 
         QTimer.singleShot(100, self.record_results)
 
     def record_results(self):
-        now = self.df["Timestamp"]
+        now = self.df["Timestamp"].replace(":","-")
         filepath = os.path.join(self.LogPath, f"{self.sn_cover}_{now}.csv")
-        with open(filepath, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=self.df[0].keys())
-            writer.writeheader()
-            writer.writerows(self.df)
-        
+        with open(filepath, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(self.df.keys())  # Write header
+            writer.writerow(self.df.values())  # Write values
+                
             parameters = ";".join(self.df.keys())
             values = ";".join(self.df.values())
         if self.mode.upper() == "PRODUCTION":
@@ -249,12 +275,15 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "FITs Message", "Data has been uploaded to FITs")
             else:
                 QMessageBox.critical(self, "FITs Message", "Data uploaded failed to FITs\nPlease manual key and contract developer Ext:7763")
+        else:
+            QMessageBox.information(self, "System Message", f"Data has been Store in Log file\n{self.LogPath}")
         
         self.MainstackedWidget.setCurrentIndex(3)
     
     def finish_cycle(self):
         self.clear_log()
         self.MainstackedWidget.setCurrentIndex(1)
+        self.SNCoverValue.setFocus()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
