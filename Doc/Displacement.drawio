@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0" version="28.0.7">
+  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+    <mxGraphModel dx="1418" dy="752" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-0" target="GNQTQsvEyV5nBe-plCe7-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-0" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;&lt;b&gt;Start&lt;/b&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="350" y="40" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-1" target="GNQTQsvEyV5nBe-plCe7-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-1" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;&lt;b&gt;Insert Top cover to set sensors to zero and set to save height&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="130" width="200" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-2" target="GNQTQsvEyV5nBe-plCe7-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-2" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;&lt;b&gt;set all sensor to zero onTop cover&amp;nbsp;&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="240" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-3" target="GNQTQsvEyV5nBe-plCe7-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-3" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;&lt;b&gt;Remove Top cover&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="320" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-4" target="GNQTQsvEyV5nBe-plCe7-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-4" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;Read all&amp;nbsp;measured values cover and Bench(mm.)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="400" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-5" target="GNQTQsvEyV5nBe-plCe7-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-5" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;Create cover plane and Bench plane&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="480" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="GNQTQsvEyV5nBe-plCe7-12" target="GNQTQsvEyV5nBe-plCe7-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-12" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;Define Cover plane to reference plane (0,0,0)&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;font-size: 15px;&quot;&gt;and&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-size: 15px;&quot;&gt;Bench plane is test plane&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="559.5" width="200" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="GNQTQsvEyV5nBe-plCe7-14" value="&lt;span style=&quot;font-size: 15px;&quot;&gt;Calculate fine result&amp;nbsp;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontStyle=1" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="300" y="690" width="200" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

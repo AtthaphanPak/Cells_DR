@@ -38,36 +38,37 @@ def evaluate_offset_and_result(ref_points, test_points, nominal=18.11, tolerance
     offset = bench_avg_z - cover_avg_z
     is_pass = abs(offset - nominal) <= tolerance
     return offset, cover_avg_z, bench_avg_z, is_pass
-# ------------------------------
-if __name__ == "__main__":
-    # Top cover
-    ref_points = np.array([
-        [10, 50, 0.220],
-        [150, 140, 0.100],
-        [175, 50, 0.200]
-    ])
-    # Optical bench
-    test_points = np.array([
-        [10, 0, -18.020],
-        [10, 50, -18.020],
-        [50, 0, -18.000],
-        [50, 50, -17.870]
-    ])
-    # Fit planes
-    n_ref, _ = fit_plane(ref_points)
-    n_test, _ = fit_plane(test_points)
-    # Tilt
-    tilt_angle = calculate_relative_tilt(n_ref, n_test)
-    roll, pitch = calculate_roll_pitch_from_ref(n_test)
-    # Output tilt info
-    print(f"Reference Normal: {n_ref}")
-    print(f"Test Normal: {n_test}")
-    print(f"Tilt angle between planes: {tilt_angle:.5f}°")
-    print(describe_pitch_direction(pitch))
-    print(describe_roll_direction(roll))
-    # Offset and PASS/FAIL check
-    offset, cover_avg_z, bench_avg_z, is_pass = evaluate_offset_and_result(ref_points, test_points)
-    print(f"Cover avg Z: {cover_avg_z:.3f} mm")
-    print(f"Bench avg Z: {bench_avg_z:.3f} mm")
-    print(f"Offset: {offset:.3f} mm")
-    print("Result: PASS" if is_pass else "Result: FAIL")
+
+# # ------------------------------
+# if __name__ == "__main__":
+#     # Top cover
+#     ref_points = np.array([
+#         [10, 50, 0.220],
+#         [150, 140, 0.100],
+#         [175, 50, 0.200]
+#     ])
+#     # Optical bench
+#     test_points = np.array([
+#         [10, 0, -18.020],
+#         [10, 50, -18.020],
+#         [50, 0, -18.000],
+#         [50, 50, -17.870]
+#     ])
+#     # Fit planes
+#     n_ref, _ = fit_plane(ref_points)
+#     n_test, _ = fit_plane(test_points)
+#     # Tilt
+#     tilt_angle = calculate_relative_tilt(n_ref, n_test)
+#     roll, pitch = calculate_roll_pitch_from_ref(n_test)
+#     # Output tilt info
+#     print(f"Reference Normal: {n_ref}")
+#     print(f"Test Normal: {n_test}")
+#     print(f"Tilt angle between planes: {tilt_angle:.5f}°")
+#     print(describe_pitch_direction(pitch))
+#     print(describe_roll_direction(roll))
+#     # Offset and PASS/FAIL check
+#     offset, cover_avg_z, bench_avg_z, is_pass = evaluate_offset_and_result(ref_points, test_points)
+#     print(f"Cover avg Z: {cover_avg_z:.3f} mm")
+#     print(f"Bench avg Z: {bench_avg_z:.3f} mm")
+#     print(f"Offset: {offset:.3f} mm")
+#     print("Result: PASS" if is_pass else "Result: FAIL")

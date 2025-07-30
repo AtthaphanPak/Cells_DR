@@ -11,7 +11,7 @@ class Displacement_measurement():
         root = tk.Tk()
         root.withdraw()
         self.config = configparser.ConfigParser()
-        pcname = os.environ['COMPUTERNAME']     
+        pcname = os.environ['COMPUTERNAME']
         print(pcname)
         try:
             self.config.read("C:\Projects\Cells_DR\Properties\Config.ini")

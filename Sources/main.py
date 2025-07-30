@@ -1,76 +1,263 @@
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QInputDialog, QMessageBox, QLineEdit
+from PyQt6.QtCore import QTimer
+from PyQt6 import uic
+from datetime import datetime
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import sys
+import csv
+import os
+import configparser
 
-# ---------------------------
-# Reference Plane (Z = 0 for all points)
-# ---------------------------
-# A = np.array([0.0, 0.0, 0.0])
-# B = np.array([50.0, 0.0, 0.0])
-# C = np.array([0.0, 50.0, 0.0])
-# Fixed normal vector since reference plane is horizontal
-n_ref = np.array([0.0, 0.0, 1.0])
-# ---------------------------
-# Test Plane - 4 points (from displacement measurements)
-# ---------------------------
-test_points = np.array([
-    [10.2, 3.7, 0.502],
-    [44.9, 2.1, 0.498],
-    [5.4, 45.3, 0.503],
-    [48.7, 48.0, 0.499]
-])
-# ---------------------------
-# Least Squares Plane Fit จาก 4 จุด
-# ---------------------------
-def normal_vector_from_4_points(points):
-    X = np.c_[points[:, 0], points[:, 1], np.ones(points.shape[0])]
-    Z = points[:, 2]
-    coeffs, _, _, _ = np.linalg.lstsq(X, Z, rcond=None)
-    a, b = coeffs[0], coeffs[1]
-    normal = np.array([-a, -b, 1.0])
-    return normal / np.linalg.norm(normal), coeffs
-# ---------------------------
-# คำนวณมุมเอียง
-# ---------------------------
-def compute_tilt_angle_deg(n1, n2):
-    cos_theta = np.clip(np.dot(n1, n2), -1.0, 1.0)
-    angle_rad = np.arccos(cos_theta)
-    return np.degrees(angle_rad)
+from IL_sensors_cmd import Read_all_sensor, set_all_zero
+from measurement import fit_plane, calculate_relative_tilt, calculate_roll_pitch_from_ref, describe_pitch_direction, describe_roll_direction, evaluate_offset_and_result
+from fitsdll import fn_Handshake, fn_Log, fn_Query
 
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("C:\Projects\Cells_DR\Sources\GUI\Displacement_window.ui", self)
 
-# ---------------------------
-# MAIN
-# ---------------------------
-n_test, (a, b, c) = normal_vector_from_4_points(test_points)
-tilt_angle = compute_tilt_angle_deg(n_ref, n_test)
-# คำนวณมุมเอียงแยกตามแกน
-tilt_x_angle = np.degrees(np.arctan2(n_test[0], n_test[2]))
-tilt_y_angle = np.degrees(np.arctan2(n_test[1], n_test[2]))
-# ---------------------------
-# สร้างภาพ 3D
-# ---------------------------
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection='3d')
-# Plot test points
-ax.scatter(test_points[:, 0], test_points[:, 1], test_points[:, 2], color='red', label='Test Points')
-# Reference plane (flat Z = 0)
-xx, yy = np.meshgrid(np.linspace(0, 50, 10), np.linspace(0, 50, 10))
-zz_ref = np.zeros_like(xx)
-zz_test = a * xx + b * yy + c
-# Plot planes
-ax.plot_surface(xx, yy, zz_ref, alpha=0.3, color='blue', label='Reference Plane')
-ax.plot_surface(xx, yy, zz_test, alpha=0.3, color='red', label='Test Plane')
-# Plot normals
-origin = np.mean(test_points, axis=0)
-ax.quiver(origin[0], origin[1], origin[2], n_test[0], n_test[1], n_test[2], length=10, color='red', label='Test Normal')
-ax.quiver(origin[0], origin[1], origin[2], n_ref[0], n_ref[1], n_ref[2], length=10, color='blue', label='Ref Normal')
-# Labels and info
-ax.set_xlabel('X (mm)')
-ax.set_ylabel('Y (mm)')
-ax.set_zlabel('Z (mm)')
-ax.set_title(f"Tilt Angle = {tilt_angle:.4f}°\n"
-             f"Tilt X = {tilt_x_angle:.2f}° ({'Right' if tilt_x_angle>0 else 'Left'}), "
-             f"Tilt Y = {tilt_y_angle:.2f}° ({'Forward' if tilt_y_angle>0 else 'Backward'})")
-ax.view_init(elev=20, azim=135)
-plt.tight_layout()
-plt.show()
+        os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --disable-software-rasterizer"
+        self.exit_confirm_enabled = True
+        self.config = configparser.ConfigParser()
+        pcname = os.environ['COMPUTERNAME']
+        print(pcname)
+        self.MC = pcname
+        try:
+            self.config.read("C:\Projects\Cells_DR\Properties\Config.ini")
+            self.IL_IP = self.config["DEFAULT"].get("IL_IP", "")
+            self.IL_PORT = int(self.config["DEFAULT"].get("IL_PORT", ""))
+            self.LogPath = self.config["DEFAULT"].get("LogPath", "")
+            self.mode = self.config["DEFAULT"].get("MODE", "")
+
+            self.model = self.config["FITs"].get("model", "")
+            self.operation = self.config["FITs"].get("operation", "")            
+        except Exception as e:
+            print(f"{e}\nPlease check config.ini")
+            print("Close Program", f"{e}\nPlease check config.ini")
+            quit()
+        
+        os.makedirs(self.LogPath, exist_ok=True)
+        self.clear_log()
+
+        self.MainstackedWidget.setCurrentIndex(0)
+        self.enLineEdit.setFocus()
+        self.enLineEdit.returnPressed.connect(self.LoginButton.click)
+
+        # action Button 
+        self.LoginButton.clicked.connect(self.login)
+        self.ModeButton.clicked.connect(self.select_mode)
+        self.StartButton.clicked.connect(self.check_serials)
+        self.LogoutButton.clicked.connect(self.logout)
+        self.FinishButton.clicked.connect(self.finish_cycle)
+
+    def closeEvent(self, event):
+        print("CloseEvent")
+        if self.MainstackedWidget.currentIndex() != 0:
+            QMessageBox.information(self, "Exit Denied", "You can exit the program at the login screen.")
+            event.ignore()
+        else:
+            event.accept()
+
+    def clear_log(self):
+        self.df = {}
+        self.en = ""
+        self.sn_cover = ""
+        self.sn_bench = ""
+        self.enLineEdit.setText("")
+        self.lineEdit_Operator.setText("")
+        self.lineEdit_Operation.setText("")
+        self.lineEdit_Station.setText("")
+        self.lineEdit_Serial.setText("")
+        self.lineEdit_Serial_2.setText("")
+        self.Cover_1_Value.setText("")
+        self.Cover_2_Value.setText("")
+        self.Cover_3_Value.setText("")
+        self.Bench_1_Value.setText("")
+        self.Bench_2_Value.setText("")
+        self.Bench_3_Value.setText("")
+        self.Bench_4_Value.setText("")
+        self.Result_tilt_planes.setText("")
+        self.Result_Pitch.setText("")
+        self.Result_Roll.setText("")
+        self.Result_cover_avg.setText("")
+        self.Result_Bench_avg.setText("")
+        self.Result_offset.setText("")
+        self.Result_Final.setText("")
+    
+    def select_mode(self):
+        password, ok = QInputDialog.getText(self, "Admin login", "Enter admin password:", QLineEdit.EchoMode.Password)
+        if ok and password == "Admin123":
+            mode_dialog = QInputDialog()
+            mode, ok2 = QInputDialog.getItem(self, "Select Mode", "Choose mode:",["Production", "Debug"], 0, False)
+            if ok2:
+                self.mode = mode
+        else:
+            QMessageBox.warning(self, "Asscess Denied", "Incorrect password.")
+
+    def login(self):
+        self.en = self.enLineEdit.text()
+        if len(self.en) == 6:
+            self.label_Error_login.setText("")
+            self.MainstackedWidget.setCurrentIndex(1)
+            self.SNCoverValue.setFocus()
+            self.SNCoverValue.returnPressed.connect(lambda: self.SNBenchValue.setFocus())
+            self.SNBenchValue.returnPressed.connect(self.StartButton.click)
+        else:
+            self.label_Error_login.setStyleSheet("color: red;")
+            self.label_Error_login.setText("Invalid Employee number")
+            return
+        
+    def logout(self):
+        self.MainstackedWidget.setCurrentIndex(0)
+        self.clear_log()
+        # QTimer.singleShot(100, self.login)
+
+    def check_serials(self):
+        print("check_serials")
+        self.sn_cover = self.SNCoverValue.text()
+        self.sn_bench = self.SNBenchValue.text()
+        if self.mode.upper() == "PRODUCTION":
+            if len(self.sn_cover) == 12:
+                fits_status = fn_Handshake(self.model, self.operation, self.sn_cover)
+                if fits_status == True:
+                    if len(self.sn_bench) == 12:
+                        self.Errorlabel.setText("")
+                        QTimer.singleShot(100, self.mainprocess)
+                    else:
+                        self.Errorlabel.setStyleSheet("color: red;")
+                        self.Errorlabel.setText("SN Bench must be 12 digit")
+                else:
+                    self.Errorlabel.setStyleSheet("color: red;")
+                    self.Errorlabel.setText(fits_status)
+            else:
+                self.Errorlabel.setStyleSheet("color: red;")
+                self.Errorlabel.setText("SN Cover must be 12 digit")
+        else:
+            self.Errorlabel.setText("")
+            QTimer.singleShot(100, self.mainprocess)
+        
+    def mainprocess(self):
+        self.MainstackedWidget.setCurrentIndex(2)
+        self.lineEdit_Operator.setText(self.en)
+        self.lineEdit_Operation.setText(self.operation)
+        self.lineEdit_Station.setText(self.MC)
+        self.lineEdit_Serial.setText(self.sn_cover)
+        self.lineEdit_Serial_2.setText(self.sn_bench)
+
+        QMessageBox.information(self, "Insert Top Cover", "Please Insert Top cover to reset all sensor to zero")
+        IL_status = set_all_zero(self.IL_IP, self.IL_PORT)
+        if IL_status is False:
+            print("Can not set zreo\nPlease check IL-Sensor power")
+            QMessageBox.critical(self, "IL Sensor ERROR", "Can not set zreo\nPlease check IL-Sensor power")
+            quit()
+        
+        QMessageBox.information(self, "Remove Top cover", "Please remove top cover before read measured values")
+        IL_status = Read_all_sensor(self.IL_IP, self.IL_PORT)
+        if IL_status is False:
+            print("Can not read sensor\nPlease check IL-Sensor power")
+            QMessageBox.critical(self, "IL Sensor ERROR", "Can not read sensor\nPlease check IL-Sensor power")
+            quit()
+
+        array_values = IL_status.split(",")
+        array_values.pop(0)
+        print(array_values)
+        measured_values = np.array(array_values).astype(int) / 1000
+
+        self.Cover_1_Value.setText(measured_values[0])
+        self.Cover_2_Value.setText(measured_values[1])
+        self.Cover_3_Value.setText(measured_values[2])
+        self.Bench_1_Value.setText(measured_values[3])
+        self.Bench_2_Value.setText(measured_values[4])
+        self.Bench_3_Value.setText(measured_values[5])
+        self.Bench_4_Value.setText(measured_values[6])
+        # print(f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
+        
+        # Top cover
+        ref_points = np.array([
+            [10, 50, measured_values[0]],
+            [150, 140, measured_values[1]],
+            [175, 50, measured_values[2]]
+        ])
+        # Optical bench
+        test_points = np.array([
+            [10, 0, measured_values[3]],
+            [10, 50, measured_values[4]],
+            [50, 0, measured_values[5]],
+            [50, 50, measured_values[6]]
+        ])
+        n_ref, _ = fit_plane(ref_points)
+        n_test, _ = fit_plane(test_points)
+        # Tilt
+        tilt_angle = calculate_relative_tilt(n_ref, n_test)
+        roll, pitch = calculate_roll_pitch_from_ref(n_test)
+        Result_Pitch = describe_pitch_direction(pitch)
+        Result_Roll = describe_roll_direction(roll)
+        # Output tilt info
+
+        print(f"Reference Normal: {n_ref}")
+        print(f"Test Normal: {n_test}")
+        self.Result_tilt_planes.setText(f"{tilt_angle:.5f}")
+        self.Result_Pitch.setText(Result_Pitch)
+        self.Result_Roll.setText(Result_Roll)
+
+        # Offset and PASS/FAIL check
+        offset, cover_avg_z, bench_avg_z, is_pass = evaluate_offset_and_result(ref_points, test_points)
+        self.Result_cover_avg.setText(f"{cover_avg_z:5f}")
+        self.Result_Bench_avg.setText(f"{bench_avg_z:.5f}")
+        self.Result_offset.setText(f"{offset:.5f}")
+        self.Result_Final.setText("Result: PASS" if is_pass else "Result: FAIL")
+        
+        self.df = {
+            "EN": self.en,
+            "SN Cover": self.sn_cover,
+            "SN Bench": self.sn_bench,
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Cover 1": measured_values[0],
+            "Cover 2": measured_values[1],
+            "Cover 3": measured_values[2],
+            "Bench 1": measured_values[3],
+            "Bench 2": measured_values[4],
+            "Bench 3": measured_values[5],
+            "Bench 4": measured_values[6],
+            "Reference Normal": n_ref,
+            "Test Normal": n_test,
+            "Tilt angle between planes": f"{tilt_angle:.5f}",
+            "Tilt Pitch direction":Result_Pitch,
+            "Tilt Roll direction":Result_Roll,
+            "Cover avg Z": f"{cover_avg_z:5f}",
+            "Bench avg Z": f"{bench_avg_z:.5f}",
+            "Offset": f"{offset:.5f}",
+            "Result": "Result: PASS" if is_pass else "Result: FAIL"
+        }
+
+        QTimer.singleShot(100, self.record_results)
+
+    def record_results(self):
+        now = self.df["Timestamp"]
+        filepath = os.path.join(self.LogPath, f"{self.sn_cover}_{now}.csv")
+        with open(filepath, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.df[0].keys())
+            writer.writeheader()
+            writer.writerows(self.df)
+        
+            parameters = ";".join(self.df.keys())
+            values = ";".join(self.df.values())
+        if self.mode.upper() == "PRODUCTION":
+            fits_status = fn_Log(self.model, self.operation, parameters, values)
+            if fits_status == True:
+                QMessageBox.information(self, "FITs Message", "Data has been uploaded to FITs")
+            else:
+                QMessageBox.critical(self, "FITs Message", "Data uploaded failed to FITs\nPlease manual key and contract developer Ext:7763")
+        
+        self.MainstackedWidget.setCurrentIndex(3)
+    
+    def finish_cycle(self):
+        self.clear_log()
+        self.MainstackedWidget.setCurrentIndex(1)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.showMaximized()
+    sys.exit(app.exec())    
