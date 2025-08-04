@@ -70,13 +70,16 @@ def analyze_displacement(sensor_values):
         "roll_direction": roll_msg,
         "pitch_direction": pitch_msg,
         "offset": offset,
+        "test_points_offset": test_points,
         "result": "PASS" if is_pass else "FAIL"
     }
 # Example usage
 if __name__ == "__main__":
-    # sensor_values = [0.012, 0.020, 0.032, -18.143, -18.518, -17.445, -18.065]  # 3 cover + 4 bench
-    sensor_values = [0.012, 0.02, 0.005, -18.36, -18.262, -18.23, -18.166]  # 3 cover + 4 bench
+    # sensor_values = [0.012, 0.020, 0.032, -18.143, -18.518, -17.445, -18.065]  # 3 cover + 4 bench unit 9
+    sensor_values = [0.012, 0.02, 0.005, -18.36, -18.262, -18.23, -18.166]  # 3 cover + 4 bench unit 3
     result = analyze_displacement(sensor_values)
+    for i, pt in enumerate(result["test_points_offset"], start=1):
+        print(f"Bench {i}: Z = {pt[2]:.2f}")
     print(f"Tilt angle: {result['tilt_angle']:.4f}°")
     print(f"Roll: {result['roll']:.4f}° → {result['roll_direction']}")
     print(f"Pitch: {result['pitch']:.4f}° → {result['pitch_direction']}")

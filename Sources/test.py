@@ -1,11 +1,12 @@
 from IL_sensors_cmd import Read_all_sensor, set_all_zero
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 import time
 import numpy as np
 import csv
+import os
 
-def repeatabilitywithoutfixture(IP, PORT):
+def repeatabilitywithoutfixture(IP, PORT, sn):
     root = tk.Tk()
     root.withdraw()
 
@@ -38,13 +39,13 @@ def repeatabilitywithoutfixture(IP, PORT):
     # print(df)
     keys = list(df.keys())
     rows = zip(*[df[key] for key in keys])
-
-    with open("repeatabilitywithoutmovingfixture.csv", mode='w', newline='') as file:
+    path = os.path.join("C:\Projects\Cells_DR\test_log", f"{sn}_repeatabilitywithoutmovingfixture.csv")
+    with open(path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(keys)  # Write header row
         writer.writerows(rows)  # Write data rows
 
-def repeatabilitywithfixture(IP, PORT):
+def repeatabilitywithfixture(IP, PORT, sn):
     root = tk.Tk()
     root.withdraw()
     root.attributes("-topmost", True)
@@ -79,13 +80,13 @@ def repeatabilitywithfixture(IP, PORT):
     # print(df)
     keys = list(df.keys())
     rows = zip(*[df[key] for key in keys])
-
-    with open("repeatabilitywithmovingfixture.csv", mode='w', newline='') as file:
+    path = os.path.join("C:\Projects\Cells_DR\test_log", f"{sn}repeatabilitywithmovingfixture.csv")
+    with open(path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(keys)  # Write header row
         writer.writerows(rows)  # Write data rows
 
-def reproduce(IP, PORT):
+def reproduce(IP, PORT, sn):
     root = tk.Tk()
     root.withdraw()
     root.attributes("-topmost", True)
@@ -120,17 +121,26 @@ def reproduce(IP, PORT):
     # print(df)
     keys = list(df.keys())
     rows = zip(*[df[key] for key in keys])
-
-    with open("reproduce.csv", mode='w', newline='') as file:
+    path = os.path.join("C:\Projects\Cells_DR\test_log", f"{sn}reproduce.csv")
+    with open(path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(keys)  # Write header row
         writer.writerows(rows)  # Write data rows
 
 IP = "169.254.148.227"
 PORT = 64000
-
-repeatabilitywithoutfixture(IP, PORT)
-# repeatabilitywithfixture(IP, PORT)
-# reproduce(IP, PORT)
-
-    
+while True:
+    os.makedirs(r"C:\Projects\Cells_DR\test_log",exist_ok=True)
+    root = tk.Tk()
+    root.withdraw()
+    sn = simpledialog.askstring("Insert Serial number", "Please enter SN Unit:")
+    if sn is None:
+        print("Canncal")
+        quit()
+    elif sn == "":
+        print("EMPTY")
+        continue
+    else:
+        repeatabilitywithoutfixture(IP, PORT, sn)
+        repeatabilitywithfixture(IP, PORT, sn)
+        reproduce(IP, PORT, sn)
