@@ -69,7 +69,6 @@ class MainWindow(QMainWindow):
 
     def clear_log(self):
         self.df = {}
-        self.en = ""
         self.sn_cover = ""
         self.sn_bench = ""
         self.enLineEdit.setText("")
@@ -158,14 +157,14 @@ class MainWindow(QMainWindow):
         self.lineEdit_Serial.setText(self.sn_cover)
         self.lineEdit_Serial_2.setText(self.sn_bench)
 
-        QMessageBox.information(self, "Insert Top Cover", "Please Insert Top cover to reset all sensor to zero")
-        IL_status = set_all_zero(self.IL_IP, self.IL_PORT)
-        if IL_status is False:
-            print("Can not set zreo\nPlease check IL-Sensor power")
-            QMessageBox.critical(self, "IL Sensor ERROR", "Can not set zreo\nPlease check IL-Sensor power")
-            quit()
+        # QMessageBox.information(self, "Insert Top Cover", "Please Insert Top cover to reset all sensor to zero")
+        # IL_status = set_all_zero(self.IL_IP, self.IL_PORT)
+        # if IL_status is False:
+        #     print("Can not set zreo\nPlease check IL-Sensor power")
+        #     QMessageBox.critical(self, "IL Sensor ERROR", "Can not set zreo\nPlease check IL-Sensor power")
+        #     quit()
         
-        QMessageBox.information(self, "Remove Top cover", "Please remove top cover before read measured values")
+        # QMessageBox.information(self, "Remove Top cover", "Please remove top cover before read measured values")
         IL_status = Read_all_sensor(self.IL_IP, self.IL_PORT)
         if IL_status is False:
             print("Can not read sensor\nPlease check IL-Sensor power")
@@ -194,16 +193,16 @@ class MainWindow(QMainWindow):
         
         # Top cover
         ref_points = np.array([
-            [10, 50, measured_values[0]],
-            [150, 140, measured_values[1]],
-            [175, 50, measured_values[2]]
+            [0, 0, measured_values[0]],
+            [155, 10, measured_values[1]],
+            [100, 90, measured_values[2]]
         ])
         # Optical bench
         test_points = np.array([
-            [10, 0, measured_values[3]],
-            [10, 50, measured_values[4]],
-            [50, 0, measured_values[5]],
-            [50, 50, measured_values[6]]
+            [40, 70, measured_values[3]],
+            [135, 70, measured_values[4]],
+            [25, 23, measured_values[5]],
+            [135, 15, measured_values[6]]
         ])
         n_ref, _ = fit_plane(ref_points)
         n_test, _ = fit_plane(test_points)
