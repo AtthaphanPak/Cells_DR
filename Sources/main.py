@@ -23,6 +23,8 @@ class MainWindow(QMainWindow):
         self.config = configparser.ConfigParser()
         pcname = os.environ['COMPUTERNAME']
         print(pcname)
+        self.mesure_points = []
+
         self.MC = pcname
         try:
             self.config.read("C:\Projects\Cells_DR\Properties\Config.ini")
@@ -32,7 +34,21 @@ class MainWindow(QMainWindow):
             self.mode = self.config["DEFAULT"].get("MODE", "")
 
             self.model = self.config["FITs"].get("model", "")
-            self.operation = self.config["FITs"].get("operation", "")            
+            self.operation = self.config["FITs"].get("operation", "")
+            self.spec = {
+                "limit": float(self.config["SPEC"].get("limit", "")),
+                "tolerance": float(self.config["SPEC"].get("tolerance", ""))
+            }
+            for i in range(1, 4):
+                x = float(self.config["SPEC"].get(f"cover{i}_X"))
+                y = float(self.config["SPEC"].get(f"cover{i}_Y"))
+                self.mesure_points.append([x, y])
+            for i in range(1, 5):
+                x = float(self.config["SPEC"].get(f"bench{i}_X"))
+                y = float(self.config["SPEC"].get(f"bench{i}_Y"))
+                self.mesure_points.append([x, y])
+            # print(self.mesure_points)
+
         except Exception as e:
             print(f"{e}\nPlease check config.ini")
             print("Close Program", f"{e}\nPlease check config.ini")
@@ -90,6 +106,7 @@ class MainWindow(QMainWindow):
         self.Result_Pitch.setText("")
         self.Result_Roll.setText("")
         self.Result_offset.setText("")
+        self.Result_Deviation.setText("")
         self.Result_Final.setText("")
         self.Result_Final.setStyleSheet("")
     
@@ -154,7 +171,7 @@ class MainWindow(QMainWindow):
         self.lineEdit_Station.setText(self.MC)
         self.lineEdit_Serial.setText(self.sn_cover)
         self.lineEdit_Serial_2.setText(self.sn_bench)
-        
+
         IL_status = Read_all_sensor(self.IL_IP, self.IL_PORT)
         if IL_status is False:
             print("Can not read sensor\nPlease check IL-Sensor power")
@@ -170,8 +187,8 @@ class MainWindow(QMainWindow):
             self.MainstackedWidget.setCurrentIndex(1)
             self.SNCoverValue.setFocus()
             return
-        
-        result = analyze_displacement(measured_values)
+
+        result = analyze_displacement(self.mesure_points, self.spec, measured_values)
 
         bench_pts = result["test_points_offset"]
 
@@ -186,6 +203,8 @@ class MainWindow(QMainWindow):
         self.Bench_4_Value.setText(str(round(bench_pts[3][2], 3)))
         # print(f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
 
+        diff = abs(float(result['offset']) - float(self.spec["limit"]))
+
         print(f"Tilt angle: {result['tilt_angle']:.4f}°")
         print(f"Roll: {result['roll_direction']}")
         print(f"Pitch: {result['pitch_direction']}")
@@ -196,7 +215,7 @@ class MainWindow(QMainWindow):
         self.Result_Pitch.setText(f"{result['pitch_direction']}")
         self.Result_Roll.setText(f"{result['roll_direction']}")
         self.Result_offset.setText(f"{result['offset']:.3f}")
-
+        self.Result_Deviation.setText()
         finalresult = result['result']
         if finalresult == "PASS":
             self.Result_Final.setStyleSheet("background-color: green; color: white; font-weight: bold;")
@@ -227,6 +246,7 @@ class MainWindow(QMainWindow):
             "Tilt Pitch direction": f"{result['pitch_direction']}",
             "Tilt Roll direction":f"{result['roll_direction']}",
             "Offset": f"{result['offset']:.3f}",
+            "Deviation": f"{diff:.3f}",
             "Result": finalresult
         }
         # print(self.df)

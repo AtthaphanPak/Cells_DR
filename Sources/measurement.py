@@ -32,23 +32,24 @@ def describe_roll_direction(roll, threshold=0.001):
         return f"Tilt right {abs(roll):.4f}°"
     else:
         return "No left/right tilt"
-def evaluate_offset_and_result(ref_z, test_z, nominal=-18.11, tolerance=0.25):
+def evaluate_offset_and_result(ref_z, test_z, nominal, tolerance):
     offset = np.mean(test_z) - np.mean(ref_z)
     is_pass = abs(offset - nominal) <= tolerance
     return offset, is_pass
-def analyze_displacement(sensor_values):
+def analyze_displacement(mesure_points, spec, sensor_values):
+    
     # Top cover
     ref_points = np.array([
-        [0, 0, sensor_values[0]],
-        [155, 10, sensor_values[1]],
-        [100, 90, sensor_values[2]]
+        [mesure_points[0][0], mesure_points[0][1], sensor_values[0]],
+        [mesure_points[1][0], mesure_points[1][1], sensor_values[1]],
+        [mesure_points[2][0], mesure_points[2][1], sensor_values[2]]
     ])
     # Optical bench
     test_points = np.array([
-        [40, 70, sensor_values[3]],
-        [135, 70, sensor_values[4]],
-        [25, 23, sensor_values[5]],
-        [135, 15, sensor_values[6]]
+        [mesure_points[3][0], mesure_points[3][1], sensor_values[3]],
+        [mesure_points[4][0], mesure_points[4][1], sensor_values[4]],
+        [mesure_points[5][0], mesure_points[5][1], sensor_values[5]],
+        [mesure_points[6][0], mesure_points[6][1], sensor_values[6]]
     ])
     # Step 1-2: Fit reference plane
     n_ref, _ = fit_plane(ref_points)
@@ -65,7 +66,7 @@ def analyze_displacement(sensor_values):
     roll, pitch = calculate_roll_pitch_from_ref(n_test)
     roll_msg = describe_roll_direction(roll)
     pitch_msg = describe_pitch_direction(pitch)
-    offset, is_pass = evaluate_offset_and_result(ref_points[:, 2], test_points[:, 2])
+    offset, is_pass = evaluate_offset_and_result(ref_points[:, 2], test_points[:, 2], nominal=spec["limit"], tolerance=spec["tolerance"])
     # Results
     return {
         "Reference Normal": n_ref,
