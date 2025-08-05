@@ -10,7 +10,7 @@ import os
 import configparser
 
 from IL_sensors_cmd import Read_all_sensor, set_all_zero
-from measurement import fit_plane, calculate_relative_tilt, calculate_roll_pitch_from_ref, describe_pitch_direction, describe_roll_direction, evaluate_offset_and_result
+from measurement import analyze_displacement
 from fitsdll import fn_Handshake, fn_Log, fn_Query
 
 class MainWindow(QMainWindow):
@@ -89,8 +89,6 @@ class MainWindow(QMainWindow):
         self.Result_tilt_planes.setText("")
         self.Result_Pitch.setText("")
         self.Result_Roll.setText("")
-        self.Result_cover_avg.setText("")
-        self.Result_Bench_avg.setText("")
         self.Result_offset.setText("")
         self.Result_Final.setText("")
         self.Result_Final.setStyleSheet("")
@@ -181,87 +179,71 @@ class MainWindow(QMainWindow):
             self.SNCoverValue.setFocus()
             return
         
+        result = analyze_displacement(measured_values)
+
+        bench_pts = result["test_points_offset"]
+
         measured_values_str = measured_values.astype(str)
         self.Cover_1_Value.setText(measured_values_str[0])
         self.Cover_2_Value.setText(measured_values_str[1])
         self.Cover_3_Value.setText(measured_values_str[2])
-        self.Bench_1_Value.setText(measured_values_str[3])
-        self.Bench_2_Value.setText(measured_values_str[4])
-        self.Bench_3_Value.setText(measured_values_str[5])
-        self.Bench_4_Value.setText(measured_values_str[6])
+
+        self.Bench_1_Value.setText(str(round(bench_pts[0][2], 3)))
+        self.Bench_2_Value.setText(str(round(bench_pts[1][2], 3)))
+        self.Bench_3_Value.setText(str(round(bench_pts[2][2], 3)))
+        self.Bench_4_Value.setText(str(round(bench_pts[3][2], 3)))
         # print(f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
+
+        print(f"Tilt angle: {result['tilt_angle']:.4f}°")
+        print(f"Roll: {result['roll_direction']}")
+        print(f"Pitch: {result['pitch_direction']}")
+        print(f"Offset Z: {result['offset']:.3f} mm")
+        print(f"Result: {result['result']}")
         
-        # Top cover
-        ref_points = np.array([
-            [0, 0, measured_values[0]],
-            [155, 10, measured_values[1]],
-            [100, 90, measured_values[2]]
-        ])
-        # Optical bench
-        test_points = np.array([
-            [40, 70, measured_values[3]],
-            [135, 70, measured_values[4]],
-            [25, 23, measured_values[5]],
-            [135, 15, measured_values[6]]
-        ])
-        n_ref, _ = fit_plane(ref_points)
-        n_test, _ = fit_plane(test_points)
-        # Tilt
-        tilt_angle = calculate_relative_tilt(n_ref, n_test)
-        roll, pitch = calculate_roll_pitch_from_ref(n_test)
-        Result_Pitch = describe_pitch_direction(pitch)
-        Result_Roll = describe_roll_direction(roll)
-        # Output tilt info
+        self.Result_tilt_planes.setText(f"{result['tilt_angle']:.4f}")
+        self.Result_Pitch.setText(f"{result['pitch_direction']}")
+        self.Result_Roll.setText(f"{result['roll_direction']}")
+        self.Result_offset.setText(f"{result['offset']:.3f}")
 
-        print(f"Reference Normal: {n_ref}")
-        print(f"Test Normal: {n_test}")
-        self.Result_tilt_planes.setText(f"{tilt_angle:.5f}")
-        self.Result_Pitch.setText(Result_Pitch)
-        self.Result_Roll.setText(Result_Roll)
-
-        # Offset and PASS/FAIL check
-        offset, cover_avg_z, bench_avg_z, is_pass = evaluate_offset_and_result(ref_points, test_points)
-        result = "PASS" if is_pass else "FAIL"
-        self.Result_cover_avg.setText(f"{cover_avg_z:5f}")
-        self.Result_Bench_avg.setText(f"{bench_avg_z:.5f}")
-        self.Result_offset.setText(f"{offset:.5f}")
-        if result == "PASS":
+        finalresult = result['result']
+        if finalresult == "PASS":
             self.Result_Final.setStyleSheet("background-color: green; color: white; font-weight: bold;")
-            self.Result_Final.setText(result)
+            self.Result_Final.setText(finalresult)
         else:
             self.Result_Final.setStyleSheet("background-color: red; color: white; font-weight: bold;")
-            self.Result_Final.setText(result)
-        
+            self.Result_Final.setText(finalresult)
         
         self.df = {
             "EN": self.en,
             "SN Cover": self.sn_cover,
             "SN Bench": self.sn_bench,
             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Cover 1": measured_values_str[0],
-            "Cover 2": measured_values_str[1],
-            "Cover 3": measured_values_str[2],
-            "Bench 1": measured_values_str[3],
-            "Bench 2": measured_values_str[4],
-            "Bench 3": measured_values_str[5],
-            "Bench 4": measured_values_str[6],
-            "Reference Normal": str(n_ref),
-            "Test Normal": str(n_test),
-            "Tilt angle between planes": f"{tilt_angle:.5f}",
-            "Tilt Pitch direction":str(Result_Pitch),
-            "Tilt Roll direction":str(Result_Roll),
-            "Cover avg Z": f"{cover_avg_z:5f}",
-            "Bench avg Z": f"{bench_avg_z:.5f}",
-            "Offset": f"{offset:.5f}",
-            "Result": "PASS" if is_pass else "FAIL"
+            "Raw Cover 1": measured_values_str[0],
+            "Raw Cover 2": measured_values_str[1],
+            "Raw Cover 3": measured_values_str[2],
+            "Raw Bench 1": measured_values_str[3],
+            "Raw Bench 2": measured_values_str[4],
+            "Raw Bench 3": measured_values_str[5],
+            "Raw Bench 4": measured_values_str[6],
+            "Reference Normal": str(result["Reference Normal"]),
+            "Bench offset 1": f"{bench_pts[0][2]:.3f}",
+            "Bench offset 2": f"{bench_pts[1][2]:.3f}",
+            "Bench offset 3": f"{bench_pts[2][2]:.3f}",
+            "Bench offset 4": f"{bench_pts[3][2]:.3f}",
+            "Test Normal": str(result["Test Normal"]),
+            "Tilt angle between planes": f"{result['tilt_angle']:.4f}",
+            "Tilt Pitch direction": f"{result['pitch_direction']}",
+            "Tilt Roll direction":f"{result['roll_direction']}",
+            "Offset": f"{result['offset']:.3f}",
+            "Result": finalresult
         }
-
+        # print(self.df)
         QTimer.singleShot(100, self.record_results)
 
     def record_results(self):
         now = self.df["Timestamp"].replace(":","-")
         filepath = os.path.join(self.LogPath, f"{self.sn_cover}_{now}.csv")
-        with open(filepath, mode='w', newline='') as file:
+        with open(filepath, mode='w', encoding="utf-8", newline='') as file:
             writer = csv.writer(file)
             writer.writerow(self.df.keys())  # Write header
             writer.writerow(self.df.values())  # Write values

@@ -13,10 +13,12 @@ def calculate_relative_tilt(n_ref, n_test):
     return np.degrees(angle_rad)
 def calculate_roll_pitch_from_ref(n_test):
     nx, ny, nz = n_test
-    roll = np.degrees(np.arctan2(ny, nz))  # around X
-    pitch = np.degrees(np.arctan2(-nx, np.sqrt(ny**2 + nz**2)))  # around Y
+    pitch = np.degrees(np.arctan2(ny, nz))  # around Y
+    roll = np.degrees(np.arctan2(-nx, np.sqrt(ny**2 + nz**2)))  # around X
+    print("pitch: ", pitch)
+    print("roll: ", roll)
     return roll, pitch
-def describe_pitch_direction(pitch, threshold=0.001):
+def describe_pitch_direction(pitch, threshold=0.001):        
     if pitch > threshold:
         return f"Tilt backward {abs(pitch):.4f}°"
     elif pitch < -threshold:
@@ -24,10 +26,12 @@ def describe_pitch_direction(pitch, threshold=0.001):
     else:
         return "No forward/backward tilt"
 def describe_roll_direction(roll, threshold=0.001):
-    if roll > threshold:
-        return f"Tilt left {abs(roll):.4f}°"
-    elif roll < -threshold:
+    roll = round(roll, 3)
+    print(roll)
+    if roll > -threshold:
         return f"Tilt right {abs(roll):.4f}°"
+    elif roll < threshold:
+        return f"Tilt left {abs(roll):.4f}°"
     else:
         return "No left/right tilt"
 def evaluate_offset_and_result(ref_z, test_z, nominal=-18.11, tolerance=0.25):
@@ -42,11 +46,17 @@ def analyze_displacement(sensor_values):
         [100, 90, sensor_values[2]]
     ])
     # Optical bench
+    # test_points = np.array([
+    #     [40, 70, sensor_values[3]],
+    #     [135, 70, sensor_values[4]],
+    #     [25, 23, sensor_values[5]],
+    #     [135, 15, sensor_values[6]]
+    # ])
     test_points = np.array([
-        [40, 70, sensor_values[3]],
-        [135, 70, sensor_values[4]],
-        [25, 23, sensor_values[5]],
-        [135, 15, sensor_values[6]]
+        [50, 70, sensor_values[3]],
+        [150, 70, sensor_values[4]],
+        [50, 20, sensor_values[5]],
+        [150, 20, sensor_values[6]]
     ])
     # Step 1-2: Fit reference plane
     n_ref, _ = fit_plane(ref_points)
@@ -76,12 +86,12 @@ def analyze_displacement(sensor_values):
 # Example usage
 if __name__ == "__main__":
     # sensor_values = [0.012, 0.020, 0.032, -18.143, -18.518, -17.445, -18.065]  # 3 cover + 4 bench unit 9
-    sensor_values = [0.012, 0.02, 0.005, -18.36, -18.262, -18.23, -18.166]  # 3 cover + 4 bench unit 3
+    sensor_values = [0.00, 0.00, 0.00, -18.00, -18.50, -18.00, -18.50]  # 3 cover + 4 bench unit 3
     result = analyze_displacement(sensor_values)
     for i, pt in enumerate(result["test_points_offset"], start=1):
         print(f"Bench {i}: Z = {pt[2]:.2f}")
     print(f"Tilt angle: {result['tilt_angle']:.4f}°")
-    print(f"Roll: {result['roll']:.4f}° → {result['roll_direction']}")
-    print(f"Pitch: {result['pitch']:.4f}° → {result['pitch_direction']}")
+    print(f"Pitch: {result['pitch_direction']}")
+    print(f"Roll: {result['roll_direction']}")
     print(f"Offset Z: {result['offset']:.3f} mm")
     print(f"Result: {result['result']}")
