@@ -154,15 +154,7 @@ class MainWindow(QMainWindow):
         self.lineEdit_Station.setText(self.MC)
         self.lineEdit_Serial.setText(self.sn_cover)
         self.lineEdit_Serial_2.setText(self.sn_bench)
-
-        # QMessageBox.information(self, "Insert Top Cover", "Please Insert Top cover to reset all sensor to zero")
-        # IL_status = set_all_zero(self.IL_IP, self.IL_PORT)
-        # if IL_status is False:
-        #     print("Can not set zreo\nPlease check IL-Sensor power")
-        #     QMessageBox.critical(self, "IL Sensor ERROR", "Can not set zreo\nPlease check IL-Sensor power")
-        #     quit()
         
-        # QMessageBox.information(self, "Remove Top cover", "Please remove top cover before read measured values")
         IL_status = Read_all_sensor(self.IL_IP, self.IL_PORT)
         if IL_status is False:
             print("Can not read sensor\nPlease check IL-Sensor power")

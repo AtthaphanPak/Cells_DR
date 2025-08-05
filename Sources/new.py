@@ -18,7 +18,7 @@ def calculate_roll_pitch_from_ref(n_test):
     print("pitch: ", pitch)
     print("roll: ", roll)
     return roll, pitch
-def describe_pitch_direction(pitch, threshold=0.001):        
+def describe_pitch_direction(pitch, threshold=0.001):
     if pitch > threshold:
         return f"Tilt backward {abs(pitch):.4f}°"
     elif pitch < -threshold:
@@ -26,12 +26,10 @@ def describe_pitch_direction(pitch, threshold=0.001):
     else:
         return "No forward/backward tilt"
 def describe_roll_direction(roll, threshold=0.001):
-    roll = round(roll, 3)
-    print(roll)
-    if roll > -threshold:
-        return f"Tilt right {abs(roll):.4f}°"
-    elif roll < threshold:
+    if roll > threshold:
         return f"Tilt left {abs(roll):.4f}°"
+    elif roll < -threshold:
+        return f"Tilt right {abs(roll):.4f}°"
     else:
         return "No left/right tilt"
 def evaluate_offset_and_result(ref_z, test_z, nominal=-18.11, tolerance=0.25):
@@ -86,7 +84,7 @@ def analyze_displacement(sensor_values):
 # Example usage
 if __name__ == "__main__":
     # sensor_values = [0.012, 0.020, 0.032, -18.143, -18.518, -17.445, -18.065]  # 3 cover + 4 bench unit 9
-    sensor_values = [0.00, 0.00, 0.00, -18.00, -18.50, -18.00, -18.50]  # 3 cover + 4 bench unit 3
+    sensor_values = [0.00, 0.00, 0.10, -18.41, -18.41, -18.41, -18.41]  # 3 cover + 4 bench unit 3
     result = analyze_displacement(sensor_values)
     for i, pt in enumerate(result["test_points_offset"], start=1):
         print(f"Bench {i}: Z = {pt[2]:.2f}")
