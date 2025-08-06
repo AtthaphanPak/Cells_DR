@@ -57,6 +57,9 @@ class MainWindow(QMainWindow):
         os.makedirs(self.LogPath, exist_ok=True)
         self.clear_log()
 
+        self.Limit.setText(str(self.spec["limit"]))
+        self.tolerance.setText(str(self.spec["tolerance"]))
+
         self.MainstackedWidget.setCurrentIndex(0)
         self.enLineEdit.setFocus()
         self.enLineEdit.returnPressed.connect(self.LoginButton.click)
@@ -201,9 +204,8 @@ class MainWindow(QMainWindow):
         self.Bench_2_Value.setText(str(round(bench_pts[1][2], 3)))
         self.Bench_3_Value.setText(str(round(bench_pts[2][2], 3)))
         self.Bench_4_Value.setText(str(round(bench_pts[3][2], 3)))
-        # print(f"Displacement measured\nCover 1\t{measured_values[0]}\nCover 2\t{measured_values[1]}\nCover 3\t{measured_values[2]}\nBench 1\t{measured_values[3]}\nBench 2\t{measured_values[4]}\nBench 3\t{measured_values[5]}\nBench 4\t{measured_values[6]}")
 
-        diff = abs(float(result['offset']) - float(self.spec["limit"]))
+        diff = float(result['offset']) - float(self.spec["limit"])
 
         print(f"Tilt angle: {result['tilt_angle']:.4f}°")
         print(f"Roll: {result['roll_direction']}")
@@ -215,7 +217,7 @@ class MainWindow(QMainWindow):
         self.Result_Pitch.setText(f"{result['pitch_direction']}")
         self.Result_Roll.setText(f"{result['roll_direction']}")
         self.Result_offset.setText(f"{result['offset']:.3f}")
-        self.Result_Deviation.setText()
+        self.Result_Deviation.setText(f"{diff:.3f}")
         finalresult = result['result']
         if finalresult == "PASS":
             self.Result_Final.setStyleSheet("background-color: green; color: white; font-weight: bold;")
