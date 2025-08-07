@@ -40,8 +40,8 @@ def analyze_displacement(sensor_values):
     # Top cover
     ref_points = np.array([
         [0, 0, sensor_values[0]],
-        [155, 10, sensor_values[1]],
-        [100, 90, sensor_values[2]]
+        [160.9, 0, sensor_values[1]],
+        [96.5, 80.9, sensor_values[2]]
     ])
     # Optical bench
     # test_points = np.array([
@@ -51,10 +51,10 @@ def analyze_displacement(sensor_values):
     #     [135, 15, sensor_values[6]]
     # ])
     test_points = np.array([
-        [50, 70, sensor_values[3]],
-        [150, 70, sensor_values[4]],
-        [50, 20, sensor_values[5]],
-        [150, 20, sensor_values[6]]
+        [44.2, 64.4, sensor_values[3]],
+        [142.4, 56, sensor_values[4]],
+        [28.4, 14.4, sensor_values[5]],
+        [146, 7.5, sensor_values[6]]
     ])
     # Step 1-2: Fit reference plane
     n_ref, _ = fit_plane(ref_points)
@@ -84,7 +84,7 @@ def analyze_displacement(sensor_values):
 # Example usage
 if __name__ == "__main__":
     # sensor_values = [0.012, 0.020, 0.032, -18.143, -18.518, -17.445, -18.065]  # 3 cover + 4 bench unit 9
-    sensor_values = [0.00, 0.00, 0.10, -18.41, -18.41, -18.41, -18.41]  # 3 cover + 4 bench unit 3
+    sensor_values = [0.001, -0.102, -0.223, -18.174, -18.728, -17.426, -18.307]  # 3 cover + 4 bench unit 3
     result = analyze_displacement(sensor_values)
     for i, pt in enumerate(result["test_points_offset"], start=1):
         print(f"Bench {i}: Z = {pt[2]:.2f}")
