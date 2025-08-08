@@ -71,6 +71,13 @@ class MainWindow(QMainWindow):
         self.remove_img.setPixmap(pixmap_remove)
         # self.remove_img.setScaledContents(True)
 
+        self.timer = QTimer(self)
+        self.timer.setInterval(500)
+
+        self.readButton.clicked.connect(self.start_read_loop)
+        self.stopButton.clicked.connect(self.stop_read_loop)
+        self.timer.timeout.connect(self.read_sensor_data)
+
         # action Button 
         self.LoginButton.clicked.connect(self.login)
         self.ModeButton.clicked.connect(self.select_mode)
@@ -212,7 +219,35 @@ class MainWindow(QMainWindow):
             print(f"{e}\nPlease check config.ini")
             print("Close Program", f"{e}\nPlease check config.ini")
             quit()
-        
+    
+    def start_read_loop(self):
+        self.timer.start()
+
+    def stop_read_loop(self):
+        self.timer.stop()
+
+    def read_sensor_data(self):
+        IL_raw = Read_all_sensor(self.IL_IP, self.IL_PORT)
+        if IL_raw is False:
+            print("Can not read sensor\nPlease check IL-Sensor power")
+            QMessageBox.critical(self, "IL Sensor ERROR", "Can not read sensor\nPlease check IL-Sensor power")
+            quit()
+
+        array_values = IL_raw.split(",")
+        array_values.pop(0)
+        # print(array_values)
+        measured_values = np.array(array_values).astype(int) / 1000
+        measured_values_str = measured_values.astype(str)
+
+        self.Curr_Cover_1.setText(measured_values_str[0])
+        self.Curr_Cover_2.setText(measured_values_str[1])
+        self.Curr_Cover_3.setText(measured_values_str[2])
+
+        self.Curr_Bench_1.setText(measured_values_str[3])
+        self.Curr_Bench_2.setText(measured_values_str[4])
+        self.Curr_Bench_3.setText(measured_values_str[5])
+        self.Curr_Bench_4.setText(measured_values_str[6])
+
     def login(self):
         self.en = self.enLineEdit.text()
         if len(self.en) == 6:

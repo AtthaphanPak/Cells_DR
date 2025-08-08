@@ -93,3 +93,7 @@ if __name__ == "__main__":
     print(f"Roll: {result['roll_direction']}")
     print(f"Offset Z: {result['offset']:.3f} mm")
     print(f"Result: {result['result']}")
+
+# X = [0.0, 160.9, 96.5, 44.2, 142.4, 28.4, 146.0]
+# Y = [0.0, 5.0, 80.9, 64.4, 56.0, 14.4, 7.5]
+# Z = [0.012, 0.020, 0.032, -18.143, -18.518, -17.445, -18.065]
